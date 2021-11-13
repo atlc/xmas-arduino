@@ -11,7 +11,7 @@ CRGB leds[NUM_LEDS];
 CRGBPalette16 blendable_palette (BLAZER_GOLD, BLAZER_GREEN, BLAZER_GOLD);
 
 int mode = 0;
-const char *modes[] = { "off", "gold", "goldtrail", "green", "greentrail", "greenandgold", "greenandgoldblend", "rgb01", "rgb02", "rgb03" };
+const char *modes[] = { "off", "gold", "goldtrail", "green", "greentrail", "greenandgold", "greenandgoldblend", "rgb01", "rgb02", "secretpartymode" };
 
 int buttonState = 0;
 int previousButtonState = 0;
@@ -19,6 +19,7 @@ int previousButtonState = 0;
 long pressedTime = 0;
 long releasedTime = 0;
 const int HOLD_THRESHOLD = 1000;
+boolean isPartyMode = false;
 
 void setup() {
   // put your setup code here, to run once:
@@ -38,7 +39,10 @@ bool checkButtonPress() {
     pressedTime = millis();
     previousButtonState = buttonState;
 
-    if (mode + 1 == modesLen - 1) {
+    if (isPartyMode) {
+      mode = 0;
+      isPartyMode = false;
+    } else if (mode + 1 == modesLen - 1) {
       mode = 0;
     } else {
       mode++;
@@ -50,7 +54,11 @@ bool checkButtonPress() {
   if (buttonState == LOW && previousButtonState == HIGH) {
     releasedTime = millis();
 
-    if ((releasedTime - pressedTime) > HOLD_THRESHOLD) {
+
+    if (!isPartyMode && (releasedTime - pressedTime) > HOLD_THRESHOLD * 3) {
+      mode = modesLen - 1;
+      isPartyMode = true;
+    } else if ((releasedTime - pressedTime) > HOLD_THRESHOLD) {
       mode = 0;
     }
 
@@ -165,9 +173,9 @@ void loop() {
   } else if (setting == "rgb02") {
     fill_rainbow(leds, NUM_LEDS, 0, 255 / NUM_LEDS * 2);
     FastLED.show();
-  } else if (setting == "rgb03") {
-    uint8_t waveCycle = beat8(10, 255);
-    fill_rainbow(leds, NUM_LEDS, waveCycle, 10);
+  } else if (setting == "secretpartymode") {
+    uint8_t waveCycle = beat8(15, 255);
+    fill_rainbow(leds, NUM_LEDS, waveCycle, 3);
     FastLED.setBrightness(40);
     FastLED.show();
   }
