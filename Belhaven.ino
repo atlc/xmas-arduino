@@ -18,7 +18,7 @@ int previousButtonState = 0;
 
 long pressedTime = 0;
 long releasedTime = 0;
-
+const int HOLD_THRESHOLD = 1000;
 
 void setup() {
   // put your setup code here, to run once:
@@ -29,21 +29,36 @@ void setup() {
 
 bool checkButtonPress() {
   buttonState = digitalRead(buttonPin);
+  const int modesLen = sizeof(modes) / sizeof(modes[0]);
 
-  if (buttonState == HIGH) {
+  Serial.println((String)"BS: " + buttonState + ",\tPBS: " + previousButtonState + ",\tmode: " + mode + ",\tColor: " + modes[mode]);
 
-    const int arrayLength = sizeof(modes) / sizeof(modes[0]);
 
-    if (mode + 1 == arrayLength) {
+  if (buttonState == HIGH && previousButtonState == LOW) {
+    pressedTime = millis();
+    previousButtonState = buttonState;
+
+    if (mode + 1 == modesLen - 1) {
       mode = 0;
     } else {
       mode++;
     }
-    delay(200); // Debouncing for button presses
+
     return true;
-  } else {
+  }
+
+  if (buttonState == LOW && previousButtonState == HIGH) {
+    releasedTime = millis();
+
+    if ((releasedTime - pressedTime) > HOLD_THRESHOLD) {
+      mode = 0;
+    }
+
+    previousButtonState = buttonState;
+
     return false;
   }
+  return false;
 }
 
 void loop() {
