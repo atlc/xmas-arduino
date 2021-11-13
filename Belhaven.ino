@@ -10,10 +10,15 @@ CRGB leds[NUM_LEDS];
 
 CRGBPalette16 blendable_palette (BLAZER_GOLD, BLAZER_GREEN, BLAZER_GOLD);
 
-int buttonState = 0;
 int mode = 0;
-
 const char *modes[] = { "off", "gold", "goldtrail", "green", "greentrail", "greenandgold", "greenandgoldblend", "rgb01", "rgb02", "rgb03" };
+
+int buttonState = 0;
+int previousButtonState = 0;
+
+long pressedTime = 0;
+long releasedTime = 0;
+
 
 void setup() {
   // put your setup code here, to run once:
@@ -22,10 +27,11 @@ void setup() {
   Serial.begin(9600);
 }
 
-void checkButtonPress() {
+bool checkButtonPress() {
   buttonState = digitalRead(buttonPin);
 
   if (buttonState == HIGH) {
+
     const int arrayLength = sizeof(modes) / sizeof(modes[0]);
 
     if (mode + 1 == arrayLength) {
@@ -34,6 +40,9 @@ void checkButtonPress() {
       mode++;
     }
     delay(200); // Debouncing for button presses
+    return true;
+  } else {
+    return false;
   }
 }
 
@@ -54,25 +63,43 @@ void loop() {
   } else if (setting == "goldtrail") {
     colorTrail(BLAZER_GOLD);
   } else if (setting == "green") {
-    FastLED.setBrightness(250);
+    FastLED.setBrightness(60);
     fill_solid(leds, NUM_LEDS, BLAZER_GREEN);
     FastLED.show();
   } else if (setting == "greentrail") {
-    FastLED.setBrightness(40);
+    FastLED.setBrightness(60);
     colorTrail(BLAZER_GREEN);
   } else if (setting == "greenandgold") {
     for (int i = 0; i < NUM_LEDS; i++) {
       for (int j = 0; j < NUM_LEDS; j++) {
-        if (i + j <= NUM_LEDS) {
+        if (i + j < NUM_LEDS) {
           leds[i + j] = BLAZER_GREEN;
         } else {
           leds[(i + j) - NUM_LEDS] = BLAZER_GOLD;
         }
       }
       FastLED.show();
-
-      checkButtonPress();
       delay(50);
+
+      if (checkButtonPress() == true) {
+        return;
+      }
+    }
+
+    for (int i = 0; i < NUM_LEDS; i++) {
+      for (int j = 0; j < NUM_LEDS; j++) {
+        if (i + j < NUM_LEDS) {
+          leds[i + j] = BLAZER_GOLD;
+        } else {
+          leds[(i + j) - NUM_LEDS] = BLAZER_GREEN;
+        }
+      }
+      FastLED.show();
+      delay(50);
+
+      if (checkButtonPress() == true) {
+        return;
+      }
     }
   } else if (setting == "greenandgoldblend") {
     for (int i = 200; i > 0; i--) {
@@ -82,11 +109,19 @@ void loop() {
       }
       fill_solid(leds, NUM_LEDS, CRGB(i, j, 0));
       FastLED.show();
-      delay(45);
+      if (checkButtonPress() == true) {
+        return;
+      }
+
+      delay(50);
     }
-
-    delay(4500);
-
+    if (checkButtonPress() == true) {
+      return;
+    }
+    delay(500);
+    if (checkButtonPress() == true) {
+      return;
+    }
     for (int i = 0; i < 200; i++) {
       int j;
       if (i >= j && i <= 200) {
@@ -96,11 +131,19 @@ void loop() {
       }
       fill_solid(leds, NUM_LEDS, CRGB(i, j, 0));
       FastLED.show();
-      delay(45);
+      if (checkButtonPress() == true) {
+        return;
+      }
+
+      delay(50);
     }
-
-    delay(4500);
-
+    if (checkButtonPress() == true) {
+      return;
+    }
+    delay(500);
+    if (checkButtonPress() == true) {
+      return;
+    }
   } else if (setting == "rgb01") {
     fill_rainbow(leds, NUM_LEDS, 0, 255 / NUM_LEDS);
     FastLED.show();
@@ -128,7 +171,10 @@ void colorTrail (CRGB color) {
     FastLED.show();
     leds[i] = CRGB::Black;
 
-    checkButtonPress();
+    if (checkButtonPress() == true) {
+      return;
+    }
+
     delay(50);
   }
 }
